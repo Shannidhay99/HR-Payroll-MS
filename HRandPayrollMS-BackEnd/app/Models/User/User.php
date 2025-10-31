@@ -24,7 +24,7 @@ class User extends Authenticatable
         'phone', 
         'password',
         'tenant_id',
-        'avatar',
+        'image',
         'google_id'
     ];
 

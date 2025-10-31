@@ -27,9 +27,12 @@ class UserController extends Controller
     // Return the authenticated user's profile
     public function profile(Request $request)
     {
+        $user = $request->user();
         return response()->json([
             'message' => 'User Profile',
-            'user'    => $request->user(),
+            'user'    => array_merge($user->toArray(), [
+                'avatar' => $user->image ? asset($user->image) : null,
+            ]),
         ], 200);
     }
 
@@ -95,6 +98,40 @@ class UserController extends Controller
             'user'    => $user,
             'token'   => $token,
         ], 201);
+    }
+
+    // Update the authenticated user's own profile
+    public function updateProfileSelf(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'firstName' => 'nullable|string|max:255',
+            'lastName'  => 'nullable|string|max:255',
+            'phone'     => 'nullable|string',
+            'profilePicture' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation Failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $user->firstName = $request->input('firstName', $user->firstName);
+        $user->lastName  = $request->input('lastName', $user->lastName);
+        $user->phone     = $request->input('phone', $user->phone);
+        if ($request->filled('profilePicture')) {
+            $user->image = $request->input('profilePicture');
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user,
+        ]);
     }
 
     public function update(Request $request, $id)
@@ -167,7 +204,7 @@ class UserController extends Controller
             $imagePath = 'uploads/user_images/';
             $image->move(public_path($imagePath), $imageName);
 
-            // Save new image path
+            // Save new image path on image column
             $user->image = $imagePath . $imageName;
             $user->save();
 
