@@ -1,0 +1,84 @@
+.companyContainer {
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.pageHeader {
+  margin-bottom: 2rem;
+}
+
+.tabNavigation {
+  margin-bottom: 1.5rem;
+}
+
+.tabButton {
+  transition: all 0.3s ease;
+}
+
+.tabButton:hover {
+  transform: translateY(-1px);
+}
+
+.companyCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.companyCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.logoContainer {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border-radius: 1rem;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
+}
+
+.hrProfileContainer {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 50%;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.statItem {
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+
+.statItem:hover {
+  transform: scale(1.05);
+}
+
+.certificationBadge {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #93c5fd;
+  transition: all 0.2s ease;
+}
+
+.certificationBadge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+@media (max-width: 768px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .companyCard {
+    padding: 1.5rem;
+  }
+}

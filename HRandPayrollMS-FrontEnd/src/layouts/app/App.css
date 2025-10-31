@@ -1,0 +1,21 @@
+/* Active state for main menu */
+/* .main-menu .active {
+  background-color: #19ba8e;
+  border-radius: 8px;
+}
+
+/* Active state for submenus with transparent glossy effect */
+/* .sub-menu .active {
+  background-color: rgba(25, 186, 142, 0.3); 
+  border-radius: 6px;
+  backdrop-filter: blur(10px); 
+} */
+
+.active span.inline-block img {
+  filter: brightness(0) saturate(100%) invert(57%) sepia(38%) saturate(500%)
+    hue-rotate(120deg);
+}
+
+.active span {
+  color: #FFFFFF;
+}

@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Custom CSS variables and styles */
+:root {
+  --color-red-theme: #ff4d6d;
+  --color-green-theme: #1ed760;
+  --color-text-theme-sec: #6e7b8b;
+  --color-default-theme: #FFFFFF;
+  --color-dark-theme: #1a1d21;
+  --color-dark-theme-primary: #1a1d21;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Horizontal scrollbar specific styling */
+::-webkit-scrollbar:horizontal {
+  height: 4px;
+}
+
+::selection {
+  background-color: #3b82f6;
+  color: white;
+}
+
+img,
+svg {
+  pointer-events: none;
+  user-select: none;
+}

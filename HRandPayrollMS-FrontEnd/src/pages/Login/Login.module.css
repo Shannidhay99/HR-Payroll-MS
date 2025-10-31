@@ -1,0 +1,89 @@
+.loginContainer {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #232526 0%, #414345 100%);
+}
+.loginForm {
+  background: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(44, 62, 80, 0.15);
+  min-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.title {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #232526;
+  margin-bottom: 0.5rem;
+}
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.inputGroup label {
+  font-weight: 500;
+  color: #232526;
+}
+.inputGroup input {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+}
+.inputGroup input:focus {
+  border: 1.5px solid #646cff;
+}
+.passwordWrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.showBtn {
+  background: none;
+  border: none;
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #646cff;
+}
+.loginBtn {
+  background: linear-gradient(90deg, #646cff 0%, #535bf2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.loginBtn:hover {
+  background: linear-gradient(90deg, #535bf2 0%, #646cff 100%);
+}
+.footer {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.97rem;
+  color: #232526;
+}
+.footer a {
+  color: #646cff;
+  text-decoration: none;
+  font-weight: 500;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
