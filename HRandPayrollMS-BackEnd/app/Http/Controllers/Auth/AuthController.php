@@ -5,14 +5,19 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Helpers\SystemLogger;
 use App\Models\User\Tenant;
 use App\Models\User\User;
 use App\Services\Auth\RefreshTokenService;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
+    // Google login is implemented at the bottom of this file
+
     public function refresh(Request $request, RefreshTokenService $refreshTokenService)
     {
         $request->validate([
@@ -41,38 +46,54 @@ class AuthController extends Controller
             'role'             => 'required|string|in:employee,admin',
         ]);
 
-        $user = User::create([
-            'firstName' => $request->firstName,
-            'lastName'  => $request->lastName,
-            'email'     => $request->email,
-            'phone'     => $request->phone,
-            'password'  => Hash::make($request->password),
-        ]);
+        try {
+            DB::beginTransaction();
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-        $refreshToken = $refreshTokenService->create($user); // ✅ create refresh token
-
-        // Handle role assignment based on selection
-        if ($request->role === 'admin') {
-            // Admin registration - create tenant and assign super_admin role
-            $tenant = new Tenant();
-            $tenant->user_id = $user->id;
-            $tenant->updated_by = $user->id;
-            $tenant->save();
-
-            $user->tenant_id = $tenant->id;
-            $user->role_id = 2; // Admin role
-            $user->save();
-
-            $user->assignRole('super_admin');
-            SystemLogger::log('info', "New super admin registered: {$user->email}", $user->id);
-        } else {
-            // Employee registration - they need to be assigned to an existing tenant
-            $user->role_id = 1; // Employee role
-            $user->save();
+            // Create base user
+            $user = new User([
+                'firstName' => $request->firstName,
+                'lastName'  => $request->lastName,
+                'email'     => $request->email,
+                'phone'     => $request->phone,
+                'password'  => Hash::make($request->password),
+                'role_id'   => $request->role === 'admin' ? 2 : 1, // 2 for admin, 1 for employee
+            ]);
             
-            $user->assignRole('employee');
-            SystemLogger::log('info', "New employee registered: {$user->email}", $user->id);
+            $user->save();
+
+            // Create tokens
+            $token = $user->createToken('auth_token')->plainTextToken;
+            $refreshToken = $refreshTokenService->create($user);
+
+            // Handle role-specific logic
+            if ($request->role === 'admin') {
+                // Create tenant first
+                $tenant = Tenant::create([
+                    'name' => $request->organization_name ?? "{$user->firstName}'s Organization",
+                    'user_id' => $user->id,
+                    'updated_by' => $user->id
+                ]);
+
+                // Update user with tenant_id
+                $user->tenant_id = $tenant->id;
+                $user->save();
+
+                // Assign admin role
+                $user->assignRole('admin');
+                SystemLogger::log('info', "New admin registered: {$user->email}", $user->id);
+            } else {
+                // Assign employee role
+                $user->assignRole('employee');
+                SystemLogger::log('info', "New employee registered: {$user->email}", $user->id);
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage()
+            ], 422);
         }
 
         return response()->json([
@@ -172,11 +193,80 @@ class AuthController extends Controller
 
     public function loginWithGoogle(Request $request)
     {
-        // Placeholder to satisfy frontend; integrate Socialite in real impl
+        try {
+            if ($request->isMethod('get')) {
+                return Socialite::driver('google')->redirect();
+            }
+
+            // Handle the callback from Google
+            $googleUser = Socialite::driver('google')->user();
+
+            // Find existing user or create new one
+            $user = User::updateOrCreate(
+                ['email' => $googleUser->email],
+                [
+                    'firstName' => explode(' ', $googleUser->name)[0] ?? '',
+                    'lastName' => explode(' ', $googleUser->name)[1] ?? '',
+                    'avatar' => $googleUser->avatar,
+                    'google_id' => $googleUser->id,
+                ]
+            );
+
+            // Create access token
+            $token = $user->createToken('google-token')->plainTextToken;
+
+            // Create refresh token using the service
+            $refreshTokenService = app(RefreshTokenService::class);
+            $refreshToken = $refreshTokenService->create($user);
+
+            SystemLogger::log('info', "User logged in with Google: {$user->email}", $user->id);
+
+            return response()->json([
+                'user' => $user,
+                'access_token' => $token,
+                'refresh_token' => $refreshToken,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Google login error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
         $request->validate([
-            'id_token' => 'nullable|string',
+            'firstName' => 'required|string|max:255',
+            'lastName' => 'required|string|max:255',
+            'phone' => 'nullable|string',
+            'avatar' => 'nullable|string',
         ]);
-        return response()->json(['message' => 'Google login not configured'], 501);
+
+        try {
+            $user->update([
+                'firstName' => $request->firstName,
+                'lastName' => $request->lastName,
+                'phone' => $request->phone,
+                'avatar' => $request->avatar,
+            ]);
+
+            SystemLogger::log('info', "Profile updated for: {$user->email}", $user->id);
+
+            return response()->json([
+                'message' => 'Profile updated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Profile update failed',
+                'error' => $e->getMessage()
+            ], 422);
+        }
     }
 
     public function userRegister(Request $request, RefreshTokenService $refreshTokenService)
