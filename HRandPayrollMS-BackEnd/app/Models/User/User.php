@@ -18,14 +18,33 @@ class User extends Authenticatable
     protected $guard_name = 'sanctum';
 
     protected $fillable = [
-        'firstName', 
-        'lastName', 
-        'email', 
-        'phone', 
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
         'password',
         'tenant_id',
         'image',
-        'google_id'
+        'google_id',
+        'department_id',
+        'employee_id',
+        'date_of_birth',
+        'gender',
+        'address',
+        'city',
+        'state',
+        'country',
+        'postal_code',
+        'emergency_contact_name',
+        'emergency_contact_phone',
+        'joining_date',
+        'designation',
+        'basic_salary',
+        'employment_type',
+        'status',
+        'bank_name',
+        'bank_account_number',
+        'bank_ifsc'
     ];
 
     protected $hidden = ['password'];
@@ -40,5 +59,20 @@ class User extends Authenticatable
     public function role()
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(\App\Models\Department\Department::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(\App\Models\Employee\Document::class);
+    }
+
+    public function notifications()
+    {
+        return $this->hasMany(\App\Models\Notification\Notification::class);
     }
 }
