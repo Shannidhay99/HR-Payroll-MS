@@ -78,6 +78,14 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       }),
       invalidatesTags: ["Profile", "User"],
     }),
+    uploadProfileImage: builder.mutation({
+      query: (formData) => ({
+        url: "/user/profile-image",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["Profile", "User"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -129,6 +137,7 @@ export const {
   useForgotPasswordMutation,
   useChangePasswordMutation,
   useUpdateProfileMutation,
+  useUploadProfileImageMutation,
 } = extendedApiSlice;
 
 export const { setToken, setRefreshToken, setUser, logout } = authSlice.actions;

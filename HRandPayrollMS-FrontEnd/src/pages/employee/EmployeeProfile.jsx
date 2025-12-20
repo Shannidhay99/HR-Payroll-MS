@@ -1,10 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useCurrentUser } from "../../components/hooks/useCurrentUser";
-import { useUpdateProfileMutation } from "../../features/auth/authSlice";
+import { useUpdateProfileMutation, useUploadProfileImageMutation, setUser } from "../../features/auth/authSlice";
+import { useDispatch } from "react-redux";
 
 export default function EmployeeProfile() {
   const currentUser = useCurrentUser();
-  
+  const dispatch = useDispatch();
+  const fileInputRef = useRef(null);
+
   const initialEmployeeData = useMemo(() => {
     return {
       name: currentUser.fullName,
@@ -23,10 +26,75 @@ export default function EmployeeProfile() {
   }, [currentUser]);
 
   const [employeeData, setEmployeeData] = useState(initialEmployeeData);
-
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
+  const [uploadProfileImage, { isLoading: isUploading }] = useUploadProfileImageMutation();
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2048 * 1024) { // 2MB limit
+        alert("File size must be less than 2MB");
+        return;
+      }
+
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert("Please select a valid image file (JPG, PNG, or WEBP)");
+        return;
+      }
+
+      setSelectedFile(file);
+
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handlePhotoUpload = async () => {
+    if (!selectedFile) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      const response = await uploadProfileImage(formData).unwrap();
+
+      // Update user data in localStorage and Redux
+      const updatedUser = {
+        ...currentUser.raw,
+        image: response.image,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      dispatch(setUser(updatedUser));
+
+      // Update local state
+      setEmployeeData({
+        ...employeeData,
+        profilePicture: response.image,
+      });
+
+      alert("Profile photo updated successfully!");
+      setSelectedFile(null);
+      setPreviewUrl(null);
+
+      // Reload to refresh all instances
+      window.location.reload();
+    } catch (error) {
+      alert(error.data?.message || "Failed to upload photo");
+      console.error("Error uploading photo:", error);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -44,8 +112,17 @@ export default function EmployeeProfile() {
         bloodGroup: employeeData.bloodGroup,
         dateOfBirth: employeeData.dateOfBirth,
         address: employeeData.address,
-        profilePicture: employeeData.profilePicture,
       }).unwrap();
+
+      // Update user data in localStorage and Redux
+      const updatedUser = {
+        ...currentUser.raw,
+        firstName,
+        lastName,
+        phone: employeeData.phone,
+      };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      dispatch(setUser(updatedUser));
 
       // Update the local state with the new data
       setEmployeeData({
@@ -116,17 +193,56 @@ export default function EmployeeProfile() {
             <div className="text-center">
               <img
                 className="h-32 w-32 rounded-full object-cover mx-auto border-4 border-red-200"
-                src={employeeData.profilePicture}
+                src={previewUrl || employeeData.profilePicture}
                 alt={employeeData.name}
               />
               <h2 className="text-xl font-bold text-gray-900 mt-4">{employeeData.name}</h2>
               <p className="text-gray-600">{employeeData.designation}</p>
               <p className="text-sm text-gray-500 mt-1">ID: {employeeData.employeeId}</p>
-              
+
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                className="hidden"
+              />
+
               {isEditing && (
-                <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                  Change Photo
-                </button>
+                <div className="mt-4 space-y-2">
+                  <button
+                    onClick={handlePhotoUpload}
+                    disabled={isUploading}
+                    className={`w-full px-4 py-2 ${
+                      isUploading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                    } text-white rounded-lg transition-colors text-sm flex items-center justify-center gap-2`}
+                  >
+                    {isUploading ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                      </>
+                    ) : selectedFile ? (
+                      'Upload Photo'
+                    ) : (
+                      'Change Photo'
+                    )}
+                  </button>
+                  {selectedFile && (
+                    <button
+                      onClick={() => {
+                        setSelectedFile(null);
+                        setPreviewUrl(null);
+                      }}
+                      className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -48,7 +48,18 @@ class User extends Authenticatable
     ];
 
     protected $hidden = ['password'];
-    
+
+    protected $appends = ['image_url'];
+
+    // ACCESSORS
+    public function getImageUrlAttribute()
+    {
+        if ($this->image) {
+            return asset($this->image);
+        }
+        return null;
+    }
+
     // SCOPES
     public function scopeTenant($query)
     {

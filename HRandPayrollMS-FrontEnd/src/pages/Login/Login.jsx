@@ -1,15 +1,18 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
 import { useLoginMutation, useGoogleLoginMutation } from "../../features/api/authApi";
+import { setToken, setRefreshToken, setUser } from "../../features/auth/authSlice";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [email, setEmailState] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
   const [googleLogin] = useGoogleLoginMutation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleGoogleLogin = async () => {
     try {
@@ -30,8 +33,15 @@ const Login = () => {
       
       const response = await login({ email, password }).unwrap();
       console.log("Login response:", response);
-      
-      // Store user data and tokens
+
+      // Store in Redux state (this is critical for API authentication!)
+      dispatch(setToken(response.access_token));
+      dispatch(setUser(response.user));
+      if (response.refresh_token) {
+        dispatch(setRefreshToken(response.refresh_token));
+      }
+
+      // Also store in localStorage (redundant as Redux actions do this, but kept for compatibility)
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("access_token", response.access_token);
       if (response.refresh_token) {
@@ -139,7 +149,7 @@ const Login = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => setEmailState(e.target.value)}
               required
               placeholder="Enter your email"
               className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all text-sm"

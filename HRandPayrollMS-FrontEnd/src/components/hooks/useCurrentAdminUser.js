@@ -5,22 +5,25 @@ import { useAuth } from "./useAuth";
 export function useCurrentAdminUser() {
   const { user } = useAuth();
 
-  const getProfilePicture = (firstName) => {
-    if (!firstName) return '/images/profile-photo.jpg';
-    
-    const name = firstName.toLowerCase().trim();
-    
-    // Map specific admin names to their profile pictures
-    const availableImages = {
-      'bob': '/images/bob-pic.jpg',
-      'alice': '/images/alice-pic.jpg',
-      'john': '/images/john-pic.jpg',
-      'sarah': '/images/sarah-pic.jpg',
-      'mike': '/images/mike-pic.jpg',
-      'lisa': '/images/lisa-pic.jpg',
-    };
-    
-    return availableImages[name] || '/images/profile-photo.jpg';
+  const getProfilePicture = (user) => {
+    // Prefer image_url from backend (full URL with asset())
+    if (user && user.image_url) {
+      return user.image_url;
+    }
+
+    // If user has an image path in the database, construct full URL
+    if (user && user.image) {
+      // If it's already a full URL, use it
+      if (user.image.startsWith('http')) {
+        return user.image;
+      }
+      // Otherwise, construct the URL from the backend
+      const backendUrl = import.meta.env.VITE_REACT_APP_BACKEND_URL || 'http://localhost:8000';
+      return `${backendUrl}/${user.image}`;
+    }
+
+    // Fallback to default image
+    return '/images/profile-photo.jpg';
   };
 
   return useMemo(() => {
@@ -61,7 +64,7 @@ export function useCurrentAdminUser() {
       joinDate: user.created_at 
         ? new Date(user.created_at).toLocaleDateString() 
         : 'Not Available',
-      profilePicture: getProfilePicture(user.firstName),
+      profilePicture: getProfilePicture(user),
     };
   }, [user]);
 }

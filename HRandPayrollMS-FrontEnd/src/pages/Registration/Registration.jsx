@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { useRegisterMutation } from "../../features/api/authApi";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { setToken, setRefreshToken, setUser } from "../../features/auth/authSlice";
 import TenantSelect from "../../components/tenant/TenantSelect";
 
 const Registration = () => {
@@ -21,6 +23,7 @@ const Registration = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -83,8 +86,15 @@ const Registration = () => {
       console.log("Sending registration payload:", payload);
       const response = await register(payload).unwrap();
       console.log("Registration response:", response);
-      
-      // Store user data and tokens
+
+      // Store in Redux state (this is critical for API authentication!)
+      dispatch(setToken(response.token));
+      dispatch(setUser(response.user));
+      if (response.refresh_token) {
+        dispatch(setRefreshToken(response.refresh_token));
+      }
+
+      // Also store in localStorage (redundant as Redux actions do this, but kept for compatibility)
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("access_token", response.token);
       if (response.refresh_token) {
